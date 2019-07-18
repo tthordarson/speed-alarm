@@ -1,0 +1,2 @@
+# speed-alarm
+Simple Android app to vibrate when detecting speeds over 50 km/h. The purpose is to be able to use the mobile phone as a silent speed alarm when taking a driving exam, to provide a warning if chances are to be over the speed limit. Different vibration pattern to be used between 50-60 km/h and over 60 km/h.
