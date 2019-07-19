@@ -1,84 +1,28 @@
 //@flow
 import React from 'react';
-import { StyleSheet, Text, View, Vibration } from 'react-native';
-import { getDistance } from 'geolib';
-import convert from 'convert-units';
+import { createDrawerNavigator, createAppContainer } from 'react-navigation';
 
-type AppState = {
-  locationA?: Coordinates,
-  locationB?: Coordinates 
-}
+import Main from './components/main';
+import LogViewer from './components/log-viewer';
 
-const INTERVAL_SECONDS = 2;
+// TODO - Create a location context which runs on the root of the app and is always tracking
+// and vibrating
 
-class App extends React.Component<{}, AppState> {
-  state: AppState = {
-
-  }
-  
-  componentDidMount() {
-    window.setInterval(() => {
-      navigator.geolocation.getCurrentPosition(success => {
-        const { locationA } = this.state;
-
-        this.setState({
-          locationA: success.coords,
-          locationB: locationA
-        });
-      });
-    }, INTERVAL_SECONDS * 1000);
-  }
-
-  componentDidUpdate() {
-    const speed = this.speedKmPerHour;
-
-    if (speed > 50 && speed <= 60) {
-      Vibration.vibrate([3000, 1000, 3000]);
+const Navigator = createDrawerNavigator({
+    Home: {
+        screen: Main
+    },
+    Logs: {
+        screen: LogViewer
     }
-    else if (speed > 60) {
-      Vibration.vibrate(10000);
+}, {
+    drawerBackgroundColor: '#bb7',
+    drawerType: 'slide',
+    edgeWidth: 10,
+    drawerWidth: 100,
+    style: {
+        paddingTop: 15
     }
-  }
-
-  get distance() {
-    const { locationA, locationB } = this.state;
-
-    if (!locationA || !locationB) {
-      return null;
-    }
-
-    return getDistance(locationA, locationB);
-  }
-
-  get speedMetersPerSecond() {
-    if (!this.distance) {
-      return 0;
-    }
-
-    return this.distance / INTERVAL_SECONDS;
-  }
-
-  get speedKmPerHour() {
-    return convert(this.speedMetersPerSecond).from('m/s').to('km/h');
-  }
-
-  render() {
-    return <View style={styles.container}>
-      {this.state.locationA && this.state.locationB ? <Text style={styles.metersDisplay}>Speed: {this.speedKmPerHour} km/h</Text> : <Text style={{ fontSize: 70 }}>Please wait</Text>}
-    </View>
-  }
-}
-
-export default App;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  metersDisplay: {
-    fontSize: 32
-  }
 });
+
+export default createAppContainer(Navigator);
