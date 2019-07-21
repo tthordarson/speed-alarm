@@ -4,13 +4,15 @@ import { StyleSheet, Text, View, Vibration } from 'react-native';
 import { getDistance } from 'geolib';
 import convert from 'convert-units';
 import { logCoordinate } from '../utilities/logger';
+import { activateKeepAwake } from 'expo-keep-awake';
+import * as Location from 'expo-location';
 
 type AppState = {
   locationA?: Coordinates,
   locationB?: Coordinates 
 }
 
-const INTERVAL_SECONDS = 10;
+const INTERVAL_SECONDS = 3;
 
 class App extends React.Component<{}, AppState> {
   state: AppState = {
@@ -18,17 +20,20 @@ class App extends React.Component<{}, AppState> {
   }
   
   componentDidMount() {
-    window.setInterval(() => {
-      navigator.geolocation.getCurrentPosition(position => {
-        const { locationA } = this.state;
+    Location.watchPositionAsync({
+      timeInterval: INTERVAL_SECONDS * 1000,
+      accuracy: Location.Accuracy.BestForNavigation
+    }, ({coords, timestamp}) => {
+      const { locationA } = this.state;
 
-        this.setState({
-          locationA: position.coords,
-          locationB: locationA
-        });
-        logCoordinate(position.coords, this.speedKmPerHour);
+      this.setState({
+        locationA: coords,
+        locationB: locationA
+      }, () => {
+        logCoordinate(coords, this.speedKmPerHour);
       });
-    }, INTERVAL_SECONDS * 1000);
+    })
+    activateKeepAwake();
   }
 
   componentDidUpdate() {
@@ -61,12 +66,15 @@ class App extends React.Component<{}, AppState> {
   }
 
   get speedKmPerHour() {
-    return convert(this.speedMetersPerSecond).from('m/s').to('km/h');
+    //const speedPerMs = this.speedMetersPerSecond;
+    const speedPerMs = this.state.locationA && this.state.locationA.speed;
+
+    return convert(speedPerMs).from('m/s').to('km/h');
   }
 
   render() {
     return <View style={styles.container}>
-      {this.state.locationA && this.state.locationB ? <Text style={styles.metersDisplay}>Speed: {this.speedKmPerHour} km/h</Text> : <Text style={{ fontSize: 70 }}>Please wait</Text>}
+      {this.state.locationA && this.state.locationB ? <Text style={styles.metersDisplay}>Speed: {this.speedKmPerHour.toFixed(0)} km/h</Text> : <Text style={{ fontSize: 52 }}>Please wait</Text>}
     </View>
   }
 }
