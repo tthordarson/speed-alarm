@@ -6,13 +6,45 @@ import convert from 'convert-units';
 import { logCoordinate } from '../utilities/logger';
 import { activateKeepAwake } from 'expo-keep-awake';
 import * as Location from 'expo-location';
+import * as TaskManager from 'expo-task-manager';
+import { orderBy } from 'lodash-es';
 
 type AppState = {
   locationA?: Coordinates,
   locationB?: Coordinates 
 }
 
+type LocationType = {
+  timestamp: number,
+  coords: Coordinates
+};
+
+type LocationTaskData = {
+  data: LocationType,
+  error: any
+}
+
 const INTERVAL_SECONDS = 3;
+
+const TASK_NAME = 'LOCATION_TASK';
+
+TaskManager.defineTask(TASK_NAME, ({ 
+  data: {
+    locations
+  } 
+}): LocationTaskData => {
+  const latest = orderBy(locations, x => x.timestamp);
+  const { speed } = latest;
+
+  const kmh = convert(speed).from('m/s').to('km/h');
+
+  if (speed > 50 && speed <= 60) {
+    Vibration.vibrate(500);
+  }
+  else if (speed > 60) {
+    Vibration.vibrate(900);
+  }
+});
 
 class App extends React.Component<{}, AppState> {
   state: AppState = {
@@ -34,17 +66,22 @@ class App extends React.Component<{}, AppState> {
       });
     })
     activateKeepAwake();
+
+    Location.startLocationUpdatesAsync(TASK_NAME, {
+      accuracy: Location.Accuracy.BestForNavigation,
+      timeInterval: 1000
+    });
   }
 
   componentDidUpdate() {
     const speed = this.speedKmPerHour;
 
-    if (speed > 50 && speed <= 60) {
-      Vibration.vibrate([3000, 1000, 3000]);
-    }
-    else if (speed > 60) {
-      Vibration.vibrate(10000);
-    }
+    // if (speed > 50 && speed <= 60) {
+    //   Vibration.vibrate([3000, 1000, 3000]);
+    // }
+    // else if (speed > 60) {
+    //   Vibration.vibrate(10000);
+    // }
   }
 
   get distance() {
